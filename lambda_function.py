@@ -3,8 +3,12 @@ In this file we specify default event handlers which are then populated into the
 Copyright Anjishnu Kumar 2015
 Happy Hacking!
 """
-
+import json
 from ask import alexa
+
+db = {}
+with open('data.json', 'r') as f:
+	db = json.loads(f.read())
 
 def lambda_handler(request_obj, context=None):
     '''
@@ -32,16 +36,15 @@ def default_handler(request):
     return alexa.create_response(message="Just ask")
 
 
-@alexa.request_handler("LaunchRequest")
-def launch_request_handler(request):
-    ''' Handler for LaunchRequest '''
-    return alexa.create_response(message="Hello Welcome to My Recipes!")
-
-
-@alexa.request_handler("SessionEndedRequest")
-def session_ended_request_handler(request):
-    return alexa.create_response(message="Goodbye!")
-
+@alexa.intent_handler("StartingEquipmentInGame")
+def starting_equipment_handler(request):
+	try:
+		sentence = db['responses'][request.intent_name()]
+		answer = db['games'][request.slots[u'Game'].lower()]['starting_equipment'][request.slots[u'Type'].lower()]
+	
+		return alexa.create_response(message=sentence % ({'answer': answer, 'game': request.slots[u'Game'], 'type': request.slots[u'Type']}))
+	except KeyError:
+		return alexa.create_response(message="I'm sorry, I don't know the answer.")
 
 @alexa.intent_handler('GetRecipeIntent')
 def get_recipe_intent_handler(request):
