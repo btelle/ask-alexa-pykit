@@ -1,5 +1,10 @@
 {
     "session": {
+		"attributes": {
+			"PreviousIntentGame": "Pandemic", 
+			"PreviousIntentType": "Cards", 
+			"PreviousIntent": "StartingEquipmentInGame"
+		},
 		"sessionId": "SessionId.d461672c-2997-4d9d-9a8c-a67834acb9aa",
 		"application": {
 			"applicationId": "amzn1.echo-sdk-ams.app.a306b3a3-3331-43c1-87bd-87d29d16fac8"
@@ -7,7 +12,7 @@
 		"user": {
 			"userId": "amzn1.account.AGBATYSC32Y2QVDQKOWJUUJNEYFA"
 		},
-		"new": true
+		"new": false
     },
     "request": {
 		"type": "IntentRequest",
@@ -17,15 +22,14 @@
 			"name": "StartingEquipmentInGame",
 			"slots": {
 				"Game": {
-					"name": "Game",
-					"value": "Pandemic"
+					"name": "Game"
 				},
 				"Type": { 
-					"name": "Type",
-					"value": "Epidemic Cards"
+					"name": "Type"
 				},
 				"Followup": {
-					"name": "Followup"
+					"name": "Followup",
+					"value": "four"
 				}
 			}
 		}

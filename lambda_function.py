@@ -40,11 +40,35 @@ def default_handler(request):
 def starting_equipment_handler(request):
 	try:
 		sentence = db['responses'][request.intent_name()]
-		answer = db['games'][request.slots[u'Game'].lower()]['starting_equipment'][request.slots[u'Type'].lower()]
-	
-		return alexa.create_response(message=sentence % ({'answer': answer, 'game': request.slots[u'Game'], 'type': request.slots[u'Type']}))
+		
+		game = request.slots[u'Game'].lower().replace(' ', '_')
+		type = request.slots[u'Type'].lower().replace(' ', '_')
+		
+		if u'Followup' not in request.slots or not request.slots[u'Followup']:
+			if isinstance(db['games'][game]['starting_equipment'][type], unicode):
+				answer = db['games'][game]['starting_equipment'][type]
+				ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.slots[u'Game'], 'type': request.slots[u'Type']}), end_session=True)
+			else:
+				question = db['games'][game]['starting_equipment'][type]['follow-up']['question']
+				ret = alexa.create_response(question, end_session=False)
+		else:
+			game = request.session[u'PreviousIntentGame'].lower().replace(' ', '_')
+			type = request.session[u'PreviousIntentType'].lower().replace(' ', '_')
+			
+			answer = db['games'][game]['starting_equipment'][type]['follow-up']['answers'][request.slots[u'Followup']]
+			ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.session[u'PreviousIntentGame'], 'type': request.session[u'PreviousIntentType']}), end_session=True)
 	except KeyError:
-		return alexa.create_response(message="I'm sorry, I don't know the answer.")
+		ret = alexa.create_response(message="I'm sorry, I don't know the answer.", end_session=True)
+	except AttributeError:
+		ret = alexa.create_response(message="I couldn't understand your question, try again.")
+	
+	request.session = {
+		"PreviousIntent": "StartingEquipmentInGame",
+		"PreviousIntentGame": request.slots[u'Game'],
+		"PreviousIntentType": request.slots[u'Type']
+	}
+	
+	return ret
 
 @alexa.intent_handler('GetRecipeIntent')
 def get_recipe_intent_handler(request):
