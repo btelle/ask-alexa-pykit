@@ -33,75 +33,64 @@ def lambda_handler(request_obj, context=None):
 @alexa.default_handler()
 def default_handler(request):
     """ The default handler gets invoked if no handler is set for a request type """
-    return alexa.create_response(message="Just ask")
+    return alexa.create_response(message="Please ask a question.")
 
 
 @alexa.intent_handler("StartingEquipmentInGame")
 def starting_equipment_handler(request):
+	return generic_question_handler(request, 'starting_equipment')
+
+@alexa.intent_handler("NumberOfPlayers")
+def num_players_handler(request):
+	return generic_question_handler(request, 'num_players')
+	
+@alexa.intent_handler("MaxAllowedEquipmentInGame")
+def num_players_handler(request):
+	return generic_question_handler(request, 'max_equipment')
+	
+@alexa.intent_handler("WhoStartsGame")
+def num_players_handler(request):
+	return generic_question_handler(request, 'who_starts_game')
+
+def generic_question_handler(request, question_key):
 	try:
 		sentence = db['responses'][request.intent_name()]
-		
 		game = request.slots[u'Game'].lower().replace(' ', '_')
-		type = request.slots[u'Type'].lower().replace(' ', '_')
+		
+		try:
+			type = request.slots[u'Type'].lower().replace(' ', '_')
+		except KeyError:
+			type = None
 		
 		if u'Followup' not in request.slots or not request.slots[u'Followup']:
-			if isinstance(db['games'][game]['starting_equipment'][type], unicode):
-				answer = db['games'][game]['starting_equipment'][type]
+			if isinstance(db['games'][game][question_key], unicode):
+				answer = db['games'][game][question_key]
+				ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.slots[u'Game']}), end_session=True)
+			elif isinstance(db['games'][game][question_key][type], unicode):
+				answer = db['games'][game][question_key][type]
 				ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.slots[u'Game'], 'type': request.slots[u'Type']}), end_session=True)
 			else:
-				question = db['games'][game]['starting_equipment'][type]['follow-up']['question']
+				question = db['games'][game][question_key][type]['follow-up']['question']
 				ret = alexa.create_response(question, end_session=False)
 		else:
 			game = request.session[u'PreviousIntentGame'].lower().replace(' ', '_')
 			type = request.session[u'PreviousIntentType'].lower().replace(' ', '_')
 			
-			answer = db['games'][game]['starting_equipment'][type]['follow-up']['answers'][request.slots[u'Followup']]
+			answer = db['games'][game][question_key][type]['follow-up']['answers'][request.slots[u'Followup']]
 			ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.session[u'PreviousIntentGame'], 'type': request.session[u'PreviousIntentType']}), end_session=True)
 	except KeyError:
 		ret = alexa.create_response(message="I'm sorry, I don't know the answer.", end_session=True)
 	except AttributeError:
 		ret = alexa.create_response(message="I couldn't understand your question, try again.")
 	
-	request.session = {
-		"PreviousIntent": "StartingEquipmentInGame",
-		"PreviousIntentGame": request.slots[u'Game'],
-		"PreviousIntentType": request.slots[u'Type']
-	}
+	sess = {}
+	sess["PreviousIntent"] = request.intent_name()
+	sess["PreviousIntentGame"] = request.slots[u'Game']
+	try:
+		sess["PreviousIntentType"] = request.slots[u'Type']
+	except KeyError:
+		sess["PreviousIntentType"] = None
+	
+	request.session = sess
 	
 	return ret
-
-@alexa.intent_handler('GetRecipeIntent')
-def get_recipe_intent_handler(request):
-    """
-    You can insert arbitrary business logic code here    
-    """
-
-    # Get variables like userId, slots, intent name etc from the 'Request' object
-    ingredient = request.slots["Ingredient"]  # Gets an Ingredient Slot from the Request object.
-    
-    if ingredient == None:
-        return alexa.create_response("Could not find an ingredient!")
-
-    # All manipulations to the request's session object are automatically reflected in the request returned to Amazon.
-    # For e.g. This statement adds a new session attribute (automatically returned with the response) storing the
-    # Last seen ingredient value in the 'last_ingredient' key. 
-
-    request.session['last_ingredient'] = ingredient # Automatically returned as a sessionAttribute
-    
-    # Modifying state like this saves us from explicitly having to return Session objects after every response
-
-    # alexa can also build cards which can be sent as part of the response
-    card = alexa.create_card(title="GetRecipeIntent activated", subtitle=None,
-                             content="asked alexa to find a recipe using {}".format(ingredient))    
-
-    return alexa.create_response("Finding a recipe with the ingredient {}".format(ingredient),
-                                 end_session=False, card_obj=card)
-
-
-
-@alexa.intent_handler('NextRecipeIntent')
-def next_recipe_intent_handler(request):
-    """
-    You can insert arbitrary business logic code here
-    """
-    return alexa.create_response(message="Getting Next Recipe ... 123")
