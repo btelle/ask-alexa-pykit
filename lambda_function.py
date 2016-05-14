@@ -52,6 +52,10 @@ def num_players_handler(request):
 def num_players_handler(request):
 	return generic_question_handler(request, 'who_starts_game')
 
+@alexa.intent_handler("WhenGameEnds")
+def num_players_handler(request):
+	return generic_question_handler(request, 'when_game_ends')
+
 def generic_question_handler(request, question_key):
 	try:
 		sentence = db['responses'][request.intent_name()]
