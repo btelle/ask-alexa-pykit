@@ -32,9 +32,23 @@ def lambda_handler(request_obj, context=None):
 
 @alexa.default_handler()
 def default_handler(request):
-    """ The default handler gets invoked if no handler is set for a request type """
-    return alexa.create_response(message="Please ask a question.")
+    return alexa.create_response(message=db['responses']['HelpIntent'])
 
+@alexa.intent_handler("AMAZON.HelpIntent")
+def help_handler(request):
+    return alexa.create_response(message=db['responses']['HelpIntent'])
+
+@alexa.intent_handler("AMAZON.StopIntent")
+def stop_handler(request):
+	return alexa.create_response(message="Goodbye.", end_session=True)
+
+@alexa.intent_handler("AMAZON.CancelIntent")
+def cancel_handler(request):
+	return alexa.create_response(message="Goodbye.", end_session=True)
+
+@alexa.intent_handler("SupportedGames")
+def supported_games_handler(request):
+	return alexa.create_response(message="These are the games I know: "+", ".join(r.replace('_', ' ') for r in db['games'].keys()))
 
 @alexa.intent_handler("StartingEquipmentInGame")
 def starting_equipment_handler(request):
