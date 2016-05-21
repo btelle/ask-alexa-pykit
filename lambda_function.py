@@ -52,7 +52,7 @@ def cancel_handler(request):
 @alexa.intent_handler("SupportedGames")
 def supported_games_handler(request):
 	answer = db['responses']['SupportedGames']
-	return alexa.create_response(message=answer % (", ".join(r.replace('_', ' ') for r in db['games'].keys())), end_session=True)
+	return alexa.create_response(message=answer % ({'answer':(", ".join(r.replace('_', ' ') for r in db['games'].keys()))}), end_session=True)
 
 @alexa.intent_handler("StartingEquipmentInGame")
 def starting_equipment_handler(request):
