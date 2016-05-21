@@ -17,8 +17,9 @@ def lambda_handler(request_obj, context=None):
     Otherwise your server can hit this code as long as you remember that the
     input 'request_obj' is JSON request converted into a nested python object.
     '''
-
+	
     metadata = {'user_name' : 'SomeRandomDude'} # add your own metadata to the request using key value pairs
+    print request_obj
     
     ''' inject user relevant metadata into the request if you want to, here.    
     e.g. Something like : 
@@ -32,11 +33,13 @@ def lambda_handler(request_obj, context=None):
 
 @alexa.default_handler()
 def default_handler(request):
-    return alexa.create_response(message=db['responses']['HelpIntent'])
+    return alexa.create_response(message=db['responses']['WelcomeIntent'], 
+    		reprompt_message=db['responses']['WelcomeIntent'])
 
 @alexa.intent_handler("AMAZON.HelpIntent")
 def help_handler(request):
-    return alexa.create_response(message=db['responses']['HelpIntent'])
+    return alexa.create_response(message=db['responses']['HelpIntent'],
+    		reprompt_message=db['responses']['HelpIntent'])
 
 @alexa.intent_handler("AMAZON.StopIntent")
 def stop_handler(request):
@@ -48,7 +51,8 @@ def cancel_handler(request):
 
 @alexa.intent_handler("SupportedGames")
 def supported_games_handler(request):
-	return alexa.create_response(message="These are the games I know: "+", ".join(r.replace('_', ' ') for r in db['games'].keys()))
+	answer = db['responses']['SupportedGames']
+	return alexa.create_response(message=answer % (", ".join(r.replace('_', ' ') for r in db['games'].keys())), end_session=True)
 
 @alexa.intent_handler("StartingEquipmentInGame")
 def starting_equipment_handler(request):
@@ -73,14 +77,14 @@ def num_players_handler(request):
 def generic_question_handler(request, question_key):
 	try:
 		sentence = db['responses'][request.intent_name()]
-		game = request.slots[u'Game'].lower().replace(' ', '_')
-		
-		try:
-			type = request.slots[u'Type'].lower().replace(' ', '_')
-		except KeyError:
-			type = None
 		
 		if u'Followup' not in request.slots or not request.slots[u'Followup']:
+			game = request.slots[u'Game'].lower().replace(' ', '_')
+			try:
+				type = request.slots[u'Type'].lower().replace(' ', '_')
+			except KeyError:
+				type = None
+			
 			if isinstance(db['games'][game][question_key], unicode):
 				answer = db['games'][game][question_key]
 				ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.slots[u'Game']}), end_session=True)
@@ -89,7 +93,7 @@ def generic_question_handler(request, question_key):
 				ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.slots[u'Game'], 'type': request.slots[u'Type']}), end_session=True)
 			else:
 				question = db['games'][game][question_key][type]['follow-up']['question']
-				ret = alexa.create_response(question, end_session=False)
+				ret = alexa.create_response(question, end_session=False, reprompt_message=question)
 		else:
 			game = request.session[u'PreviousIntentGame'].lower().replace(' ', '_')
 			type = request.session[u'PreviousIntentType'].lower().replace(' ', '_')
