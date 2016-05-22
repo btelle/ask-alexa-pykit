@@ -14,7 +14,7 @@ class UnexpectedResponseException(Exception):
 	pass
 
 if __name__ == '__main__':
-	for f in glob.glob('../alexa-boardgame-answers/test-data/*.json'):
+	for f in glob.glob('../test-data/*.json'):
 		print (os.path.basename(f))
 		request_obj = json.load(open(f))
 		print ('Request JSON')
