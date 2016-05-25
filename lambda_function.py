@@ -98,8 +98,12 @@ def generic_question_handler(request, question_key):
 			game = request.session[u'PreviousIntentGame'].lower().replace(' ', '_')
 			type = request.session[u'PreviousIntentType'].lower().replace(' ', '_')
 			
-			answer = db['games'][game][question_key][type]['follow-up']['answers'][request.slots[u'Followup']]
-			ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.session[u'PreviousIntentGame'], 'type': request.session[u'PreviousIntentType']}), end_session=True)
+			if request.slots[u'Followup'] in db['games'][game][question_key][type]['follow-up']['answers']:
+				answer = db['games'][game][question_key][type]['follow-up']['answers'][request.slots[u'Followup']]
+				ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.session[u'PreviousIntentGame'], 'type': request.session[u'PreviousIntentType']}), end_session=True)
+			else:
+				answer = db['games'][game][question_key][type]['follow-up']['default'] +' '+ db['games'][game][question_key][type]['follow-up']['question']
+				ret = alexa.create_response(message=answer, end_session=False)
 	except KeyError:
 		ret = alexa.create_response(message="I'm sorry, I don't know the answer.", end_session=True)
 	except AttributeError:
