@@ -88,22 +88,36 @@ def generic_question_handler(request, question_key):
 			if isinstance(db['games'][game][question_key], unicode):
 				answer = db['games'][game][question_key]
 				ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.slots[u'Game']}), end_session=True)
-			elif isinstance(db['games'][game][question_key][type], unicode):
+			elif type and isinstance(db['games'][game][question_key][type], unicode):
 				answer = db['games'][game][question_key][type]
 				ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.slots[u'Game'], 'type': request.slots[u'Type']}), end_session=True)
 			else:
-				question = db['games'][game][question_key][type]['follow-up']['question']
+				if type:
+					question = db['games'][game][question_key][type]['follow-up']['question']
+				else:
+					question = db['games'][game][question_key]['follow-up']['question']
 				ret = alexa.create_response(question, end_session=False, reprompt_message=question)
 		else:
 			game = request.session[u'PreviousIntentGame'].lower().replace(' ', '_')
-			type = request.session[u'PreviousIntentType'].lower().replace(' ', '_')
+			try:
+				type = request.session[u'PreviousIntentType'].lower().replace(' ', '_')
+			except KeyError:
+				type = None
 			
-			if request.slots[u'Followup'] in db['games'][game][question_key][type]['follow-up']['answers']:
-				answer = db['games'][game][question_key][type]['follow-up']['answers'][request.slots[u'Followup']]
-				ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.session[u'PreviousIntentGame'], 'type': request.session[u'PreviousIntentType']}), end_session=True)
+			if type:
+				if request.slots[u'Followup'] in db['games'][game][question_key][type]['follow-up']['answers']:
+					answer = db['games'][game][question_key][type]['follow-up']['answers'][request.slots[u'Followup']]
+					ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.session[u'PreviousIntentGame'], 'type': request.session[u'PreviousIntentType']}), end_session=True)
+				else:
+					answer = db['games'][game][question_key][type]['follow-up']['default'] +' '+ db['games'][game][question_key][type]['follow-up']['question']
+					ret = alexa.create_response(message=answer, end_session=False)
 			else:
-				answer = db['games'][game][question_key][type]['follow-up']['default'] +' '+ db['games'][game][question_key][type]['follow-up']['question']
-				ret = alexa.create_response(message=answer, end_session=False)
+				if request.slots[u'Followup'] in db['games'][game][question_key]['follow-up']['answers']:
+                                        answer = db['games'][game][question_key]['follow-up']['answers'][request.slots[u'Followup']]
+                                        ret = alexa.create_response(message=sentence % ({'answer': answer, 'game': request.session[u'PreviousIntentGame'], 'type': None}), end_session=True)
+                                else:
+                                        answer = db['games'][game][question_key]['follow-up']['default'] +' '+ db['games'][game][question_key]['follow-up']['question']
+                                        ret = alexa.create_response(message=answer, end_session=False)
 	except KeyError:
 		ret = alexa.create_response(message="I'm sorry, I don't know the answer.", end_session=True)
 	except AttributeError:
